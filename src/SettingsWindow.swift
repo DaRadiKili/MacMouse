@@ -147,7 +147,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
 }
 
 final class NavState: ObservableObject {
-    @Published var page: SettingsPage? = .mouse
+    @Published var page: SettingsPage = .mouse
 }
 
 /// Links die Seitenleiste mit Symbolen, rechts die gewählte Seite.
@@ -157,19 +157,41 @@ struct SettingsRoot: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            List(SettingsPage.allCases, selection: $nav.page) { page in
-                Label(page.title, systemImage: page.icon).tag(page as SettingsPage?)
-            }
-            .listStyle(.sidebar)
-            .frame(width: 190)
+            sidebar
             Divider()
             detail.frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
+    /// Seitenleiste aus einfachen Schaltflächen (die Listen-Auswahl von SwiftUI reagierte nicht zuverlässig auf Klicks).
+    private var sidebar: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            ForEach(SettingsPage.allCases) { page in
+                Button {
+                    nav.page = page
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: page.icon).frame(width: 22)
+                        Text(page.title)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(nav.page == page ? Color.accentColor.opacity(0.28) : Color.clear))
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
+        }
+        .padding(10)
+        .frame(width: 190)
+        .background(Color(nsColor: .windowBackgroundColor))   // passt sich Hell/Dunkel an, Text bleibt lesbar
+    }
+
     @ViewBuilder
     private var detail: some View {
-        switch nav.page ?? .mouse {
+        switch nav.page {
         case .mouse: MouseTab(model: model)
         case .battery: BatteryTab(model: model)
         case .buttons: ButtonsTab(model: model)

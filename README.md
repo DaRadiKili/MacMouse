@@ -3,7 +3,7 @@
 Kleine Menüleisten-App für macOS, mit der sich eine **Razer-Maus ohne Razer Synapse** einstellen lässt. Dazu kommen
 frei belegbare Maustasten, Wischgesten mit der Maus und getrenntes Scrollen für Maus und Trackpad.
 
-> **Status: Version 0.1.** Entwickelt und getestet mit einer **Razer Viper V3 Pro** (per Kabel) unter **macOS 27**.
+> **Status: Version 0.1.** Entwickelt und getestet mit einer **Razer Viper V3 Pro** (per Kabel und ohne Kabel) unter **macOS 27**.
 > Andere Razer-Mäuse verwenden ähnliche Befehle, sind aber nicht getestet.
 
 ## Was MacMouse kann

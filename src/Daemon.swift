@@ -12,6 +12,7 @@ func reactToConfig() {
     applyDeviceSettings()
     Pointer.apply()
     Pointer.updateFixed()
+    DispatchQueue.main.async { menuController?.showBattery(BatteryAlerts.lastInfo) }
 }
 
 /// Setzt die DPI neu, sobald die Maus (wieder) auftaucht – z. B. nach Standby oder Dongle-Wechsel.
@@ -30,6 +31,10 @@ func startDeviceWatcher() {
 }
 
 func runDaemon(showSettings: Bool = false) {
+    guard SingleInstance.acquire() else {
+        log("\(appName) läuft schon – dieser zweite Start beendet sich")
+        exit(0)
+    }
     settings.observe { reactToConfig() }
     settings.reloadIfChanged()
     let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
@@ -81,6 +86,8 @@ func runDaemon(showSettings: Bool = false) {
                                            object: nil, queue: .main) { _ in Pointer.restore() }
     let app = NSApplication.shared
     app.setActivationPolicy(.accessory)     // nur Menüleiste, kein Dock-Symbol
+    appDelegate = AppDelegate()
+    app.delegate = appDelegate
     installMainMenu()
     // `macmouse probe`: liest die Abhebe-Distanz aus (nur lesend) und schreibt sie ins Log
     DistributedNotificationCenter.default().addObserver(forName: Notification.Name("de.macmouse.probe"),
@@ -154,6 +161,11 @@ func install() {
     let domain = "gui/\(getuid())"
     _ = launchctl(["bootout", "\(domain)/\(agentLabel)"])        // laufende Version stoppen, bevor sie ersetzt wird
     removeLegacyInstall(domain: domain)
+    // Kopien, die nicht vom Autostart-Job stammen (z. B. von macOS beim Anmelden gestartet), ebenfalls beenden
+    let id = Bundle.main.bundleIdentifier ?? "de.maus.agent"
+    let running = NSRunningApplication.runningApplications(withBundleIdentifier: id).filter { $0.processIdentifier != getpid() }
+    running.forEach { $0.terminate() }
+    if !running.isEmpty { Thread.sleep(forTimeInterval: 1.5) }
     if src != installedApp {
         try? fm.createDirectory(atPath: (installedApp as NSString).deletingLastPathComponent, withIntermediateDirectories: true)
         try? fm.removeItem(atPath: installedApp)
@@ -187,15 +199,21 @@ func uninstall() {
     log("Autostart und App entfernt (Config bleibt unter \(configPath))")
 }
 
-/// Start per Doppelklick/Launchpad: läuft der Dienst schon, öffnet das nur die Einstellungen.
+/// Start ohne Argument (Doppelklick, Launchpad oder von macOS beim Anmelden wiederhergestellt).
 func launchFromFinder() {
     let id = Bundle.main.bundleIdentifier ?? ""
-    let others = NSRunningApplication.runningApplications(withBundleIdentifier: id).filter { $0.processIdentifier != getpid() }
-    if others.isEmpty {
-        runDaemon(showSettings: true)
-    } else {
+    func others() -> [NSRunningApplication] {
+        NSRunningApplication.runningApplications(withBundleIdentifier: id).filter { $0.processIdentifier != getpid() }
+    }
+    // Läuft MacMouse schon länger, hat jemand die App bewusst geöffnet: Einstellungen zeigen
+    if let o = others().first, Date().timeIntervalSince(o.launchDate ?? .distantPast) > 60 {
         DistributedNotificationCenter.default().postNotificationName(Notification.Name("de.macmouse.openSettings"), object: nil,
                                                                      userInfo: nil, deliverImmediately: true)
         exit(0)
     }
+    // Beim Anmelden startet gleichzeitig der Autostart-Job. Kurz warten, damit er den Vorrang bekommt.
+    Thread.sleep(forTimeInterval: 3)
+    if !others().isEmpty { exit(0) }
+    // Einstellungen nur bei bewusstem Start zeigen, nicht kurz nach dem Hochfahren
+    runDaemon(showSettings: ProcessInfo.processInfo.systemUptime > 180)
 }

@@ -58,6 +58,11 @@ final class BatteryTracker {
     private var lastKnown: (percent: Double, charging: Bool)?
 
     func start() {
+        // Gleich nach dem Start den zuletzt gemessenen Stand zeigen (wenn er jünger als 15 Minuten ist)
+        if let last = queue.sync(execute: { samples.last }), Date().timeIntervalSince1970 - last.t < 900 {
+            let info = BatteryInfo(percent: Int(last.p.rounded()), charging: last.c, exact: last.p)
+            DispatchQueue.main.async { BatteryAlerts.lastInfo = info; menuController?.showBattery(info) }
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in self?.sampleNow() }
         Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in self?.tick() }
     }

@@ -28,6 +28,8 @@ struct BatteryTab: View {
                     Text("Quelle: \(e.sourceNote). Die Schätzung startet mit den Razer-Angaben je Abfragerate und lernt aus dem Akku-Verlauf, den \(appName) alle 3 Minuten mitschreibt. Beim Laden braucht sie etwa 10 Minuten, bis die Ladezeit berechnet werden kann.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
+                Toggle("Prozent neben dem Symbol in der Menüleiste anzeigen",
+                       isOn: Binding(get: { settings.batteryShowPercent }, set: { settings.write(["batteryShowPercent": $0]) }))
                 HStack {
                     Spacer()
                     if model.busy { ProgressView().controlSize(.small) }

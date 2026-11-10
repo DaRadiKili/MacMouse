@@ -14,6 +14,9 @@ enum BatteryAlerts {
         set { defaults.set(newValue, forKey: "fullAlerted") }
     }
 
+    /// Letzter gemessener Stand (für die Anzeige in der Menüleiste).
+    static var lastInfo: BatteryInfo?
+
     /// Farbe des Symbols für diesen Akkustand (nil = normal).
     static func iconColor(percent: Double, charging: Bool) -> NSColor? {
         guard settings.batteryIconColors, !charging else { return nil }
@@ -48,7 +51,8 @@ enum BatteryAlerts {
 
     /// Nach jeder Messung aufrufen (Hauptthread).
     static func evaluate(_ info: BatteryInfo, _ estimate: BatteryEstimate) {
-        menuController?.setIconColor(iconColor(percent: info.exact, charging: info.charging))
+        lastInfo = info
+        menuController?.showBattery(info)
         guard settings.batteryAlerts else { return }
         var a = alerted, f = fullAlerted
         let action = decide(percent: info.exact, charging: info.charging, alerted: &a, fullAlerted: &f,

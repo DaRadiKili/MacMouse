@@ -36,6 +36,29 @@ final class MenuController: NSObject, NSMenuDelegate {
         }
     }
 
+    /// Symbolfarbe und kleine Prozentzahl neben dem Symbol (bei niedrigem Akku in derselben Farbe).
+    func showBattery(_ info: BatteryInfo?) {
+        guard let button = statusItem.button else { return }
+        let color = info.flatMap { BatteryAlerts.iconColor(percent: $0.exact, charging: $0.charging) }
+        setIconColor(color)
+        guard settings.batteryShowPercent, let info = info else {
+            button.attributedTitle = NSAttributedString(string: "")
+            button.title = ""
+            button.imagePosition = .imageOnly
+            return
+        }
+        let text = " \(info.percent)%"
+        let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .medium)
+        button.imagePosition = .imageLeft
+        if let color = color {
+            button.attributedTitle = NSAttributedString(string: text, attributes: [.font: font, .foregroundColor: color])
+        } else {
+            button.attributedTitle = NSAttributedString(string: "")
+            button.font = font
+            button.title = text                    // normaler Titel: passt sich Hell/Dunkel der Menüleiste an
+        }
+    }
+
     // MARK: Menüaufbau
 
     private func item(_ title: String, _ action: Selector, state: Bool = false, object: Any? = nil, tag: Int = 0) -> NSMenuItem {

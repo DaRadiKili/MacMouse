@@ -46,6 +46,7 @@ final class Settings {
     var batteryCritical = 10        // zweite Warnung (Symbol rot), in Prozent
     var batteryFullAlert = true     // Meldung, wenn der Akku voll ist
     var batteryIconColors = true    // Menüleisten-Symbol bei niedrigem Akku einfärben
+    var batteryShowPercent = true   // kleine Prozentzahl neben dem Menüleisten-Symbol
     var activeProfile: String?           // gerade geltendes Profil (nil = Profile nicht eingeschaltet)
     var defaultProfile: String?          // gilt, wenn für die vordere App kein eigenes Profil festgelegt ist
     var profileOrder: [String] = []      // Reihenfolge der Profile
@@ -159,6 +160,7 @@ final class Settings {
         batteryCritical = min((obj["batteryCritical"] as? Int) ?? 10, batteryLow - 1)
         batteryFullAlert = (obj["batteryFullAlert"] as? Bool) ?? true
         batteryIconColors = (obj["batteryIconColors"] as? Bool) ?? true
+        batteryShowPercent = (obj["batteryShowPercent"] as? Bool) ?? true
         activeProfile = obj["activeProfile"] as? String
         defaultProfile = obj["defaultProfile"] as? String
         profileOrder = (obj["profileOrder"] as? [String]) ?? []
